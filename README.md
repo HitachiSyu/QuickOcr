@@ -1,105 +1,106 @@
 # Quick OCR
 
-Quick OCR is a small Windows desktop OCR tool for quickly extracting text from a selected screen region.
+Quick OCR は、画面上の指定範囲から文字を素早く抽出するための Windows 向け OCR ツールです。
 
-The app is designed for offline use and uses the Windows OCR API. It is especially intended for Japanese text, English text, Chinese text, and mixed Japanese/English screenshots such as URLs, issue tracker links, chat messages, and short document snippets.
+オフライン利用を前提としており、OCR には Windows OCR API を使用しています。日本語、英語、中国語、および URL や課題管理ツールのリンクを含む日本語/英語混在テキストの読み取りを想定しています。
 
-## Features
+## 主な機能
 
-- Global hotkey screen-region OCR
-- Tray app with capture/settings/exit menu
-- Japanese UI
-- Offline OCR through Windows OCR
-- OCR language modes: Auto, Japanese, English, Chinese
-- Auto/Japanese mode uses English OCR assistance for URL and ASCII-heavy lines
-- Preserves OCR line breaks where possible
-- Copyable OCR result window
-- Custom global hotkey
-- Single-instance protection
-- Portable self-contained Windows executable
+- グローバルショートカットキーによる範囲選択 OCR
+- タスクトレイ常駐
+- 日本語 UI
+- Windows OCR API によるオフライン OCR
+- OCR 言語モード: 自動 / 日本語 / 英語 / 中国語
+- 自動/日本語モードでは、URL や英数字が多い行に英語 OCR を補助的に使用
+- 可能な範囲で改行を保持
+- OCR 結果をコピー可能なウィンドウで表示
+- ショートカットキーをカスタマイズ可能
+- 多重起動防止
+- .NET ランタイム同梱のポータブル exe
 
-## Download / Run
+## 実行方法
 
-The current portable build is included at:
+現在のポータブル版は以下に配置されています。
 
 ```text
 dist/QuickOcr.exe
 ```
 
-Run `QuickOcr.exe`, configure the hotkey/language in the settings window, then use the hotkey or tray menu item `範囲選択` to select a screen region.
+`QuickOcr.exe` を起動すると設定画面が開きます。OCR 言語とショートカットキーを設定したあと、ショートカットキー、またはタスクトレイメニューの `範囲選択` から OCR を開始できます。
 
-## Important: Windows OCR Language Packs
+## Windows OCR 言語パックについて
 
-This app does not bundle OCR models. It depends on OCR language support installed in Windows.
+このアプリには OCR モデルを同梱していません。Windows にインストールされている OCR 言語サポートを使用します。
 
-Recommended Windows OCR language packs:
+推奨する Windows OCR 言語パック:
 
-- Japanese
-- English
-- Chinese, if needed
+- 日本語
+- 英語
+- 中国語が必要な場合は中国語
 
-Auto/Japanese mode uses English OCR as an auxiliary pass for URLs and ASCII-heavy lines. If English OCR support is not installed, the app will show a warning.
+自動/日本語モードでは、URL や英数字が多い行の補正に英語 OCR を使用します。そのため、英語 OCR 言語パックが未インストールの場合は警告を表示します。
 
-## Default Usage
+## 基本的な使い方
 
-1. Start `QuickOcr.exe`.
-2. The settings window opens.
-3. Choose OCR language mode.
-4. Set or confirm the global hotkey.
-5. Use the hotkey, or right-click the tray icon and choose `範囲選択`.
-6. Drag a screen region.
-7. The OCR result appears in a copyable result window.
+1. `QuickOcr.exe` を起動します。
+2. 設定画面で OCR 言語とショートカットキーを確認します。
+3. ショートカットキー、またはタスクトレイメニューの `範囲選択` を実行します。
+4. 認識したい画面範囲をドラッグして選択します。
+5. OCR 結果ウィンドウに認識結果が表示されます。
+6. 必要に応じて `コピー` を押して結果をコピーします。
 
-Default hotkey:
+初期ショートカットキー:
 
 ```text
 Ctrl + Shift + O
 ```
 
-## Settings File
+## 設定ファイル
 
-User settings are saved beside the executable:
+ユーザー設定は exe と同じフォルダに保存されます。
 
 ```text
 quickocr.settings.json
 ```
 
-This file is intentionally ignored by Git.
+このファイルは Git 管理対象外です。
 
-## Build From Source
+## ソースからビルドする
 
-Requirements:
+必要環境:
 
 - Windows 10/11
-- .NET 8 SDK with Windows Desktop workload support
+- .NET 8 SDK
+- Windows Desktop 対応の .NET SDK 環境
 
-Build:
+ビルド:
 
 ```powershell
 dotnet build src/QuickOcr/QuickOcr.csproj -c Release
 ```
 
-Publish a self-contained single-file executable:
+自己完結型の単一 exe として発行:
 
 ```powershell
 dotnet publish src/QuickOcr/QuickOcr.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o dist
 ```
 
-## Repository Layout
+## ディレクトリ構成
 
 ```text
 assets/
-  素材.png                 Original background material
+  素材.png                 背景素材
 
 dist/
-  QuickOcr.exe             Current portable build
+  QuickOcr.exe             現在のポータブル版
 
 src/QuickOcr/
-  WPF application source
+  WPF アプリケーション本体
 ```
 
-## Notes
+## 注意事項
 
-- The app is currently Windows-only.
-- OCR quality depends on the installed Windows OCR language packs.
-- For mixed Japanese and URL/English text, install both Japanese and English OCR support.
+- 現在は Windows 専用です。
+- OCR 精度は Windows にインストールされている OCR 言語パックに依存します。
+- 日本語本文と URL/英語が混在する画面を認識する場合は、日本語と英語の OCR 言語サポートを両方インストールしてください。
+- `dist/QuickOcr.exe` はサイズが大きいため、将来的には GitHub Releases または Git LFS での配布に切り替える可能性があります。
