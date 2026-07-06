@@ -1,0 +1,159 @@
+<Window x:Class="QuickOcr.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Quick OCR"
+        Width="720"
+        Height="460"
+        MinWidth="520"
+        MinHeight="320"
+        WindowStartupLocation="CenterScreen"
+        Background="#00000000"
+        AllowsTransparency="True"
+        WindowStyle="None"
+        ResizeMode="CanResizeWithGrip"
+        Icon="Assets/QuickOcr.ico">
+    <Window.Resources>
+        <Style x:Key="BaseButtonStyle" TargetType="Button">
+            <Setter Property="MinWidth" Value="78" />
+            <Setter Property="Height" Value="34" />
+            <Setter Property="Margin" Value="8,0,0,0" />
+            <Setter Property="Padding" Value="14,0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ActionButtonStyle"
+               TargetType="Button"
+               BasedOn="{StaticResource BaseButtonStyle}">
+            <Setter Property="Background" Value="#0A70D8" />
+            <Setter Property="BorderBrush" Value="#0A70D8" />
+            <Setter Property="Foreground" Value="#FFFFFF" />
+        </Style>
+
+        <Style x:Key="SecondaryButtonStyle"
+               TargetType="Button"
+               BasedOn="{StaticResource BaseButtonStyle}">
+            <Setter Property="Background" Value="#E6FFFFFF" />
+            <Setter Property="BorderBrush" Value="#B8C4D7" />
+            <Setter Property="Foreground" Value="#202020" />
+        </Style>
+
+        <Style x:Key="RoundedResultTextBoxStyle" TargetType="TextBox">
+            <Setter Property="Background" Value="#E8FFFFFF" />
+            <Setter Property="BorderBrush" Value="#AFC0D8" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="10">
+                            <ScrollViewer x:Name="PART_ContentHost"
+                                          Margin="{TemplateBinding Padding}" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Border BorderBrush="#C7D0DD"
+            BorderThickness="1"
+            CornerRadius="12"
+            ClipToBounds="True">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="24"
+                              ShadowDepth="8"
+                              Opacity="0.22" />
+        </Border.Effect>
+
+        <Grid>
+            <Image Source="Assets/SettingsBackground.png"
+                   Stretch="UniformToFill"
+                   Opacity="1" />
+            <Rectangle Fill="#58FFFFFF" />
+            <Rectangle>
+                <Rectangle.Fill>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Color="#30FFFFFF" Offset="0" />
+                        <GradientStop Color="#10FFFFFF" Offset="0.55" />
+                        <GradientStop Color="#24FFFFFF" Offset="1" />
+                    </LinearGradientBrush>
+                </Rectangle.Fill>
+            </Rectangle>
+
+            <Grid Margin="18">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <DockPanel MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                    <TextBlock Text="OCR&#32080;&#26524;"
+                               FontSize="17"
+                               FontWeight="SemiBold"
+                               Foreground="#151515"
+                               VerticalAlignment="Center" />
+                    <StackPanel DockPanel.Dock="Right"
+                                Orientation="Horizontal"
+                                HorizontalAlignment="Right">
+                        <Button x:Name="CopyButton"
+                                Content="&#12467;&#12500;&#12540;"
+                                Click="CopyButton_Click"
+                                Style="{StaticResource ActionButtonStyle}" />
+                        <Button Content="&#35373;&#23450;"
+                                Click="SettingsButton_Click"
+                                Style="{StaticResource SecondaryButtonStyle}" />
+                        <Button Content="&#20877;&#21462;&#24471;"
+                                Click="RetakeButton_Click"
+                                Style="{StaticResource SecondaryButtonStyle}" />
+                        <Button Content="&#38281;&#12376;&#12427;"
+                                Click="CloseButton_Click"
+                                Style="{StaticResource SecondaryButtonStyle}" />
+                    </StackPanel>
+                </DockPanel>
+
+                <TextBox x:Name="ResultTextBox"
+                         Grid.Row="1"
+                         Margin="0,16,0,12"
+                         Padding="15"
+                         AcceptsReturn="True"
+                         AcceptsTab="True"
+                         VerticalScrollBarVisibility="Auto"
+                         HorizontalScrollBarVisibility="Auto"
+                         TextWrapping="Wrap"
+                         FontSize="15"
+                         FontFamily="Yu Gothic UI, Segoe UI"
+                         Style="{StaticResource RoundedResultTextBoxStyle}" />
+
+                <DockPanel Grid.Row="2">
+                    <TextBlock x:Name="StatusTextBlock"
+                               Foreground="#4C4C4C"
+                               FontSize="12"
+                               VerticalAlignment="Center" />
+                    <TextBlock x:Name="HotkeyTextBlock"
+                               DockPanel.Dock="Right"
+                               Text="Ctrl+Shift+O"
+                               Foreground="#4C4C4C"
+                               FontSize="12"
+                               VerticalAlignment="Center" />
+                </DockPanel>
+            </Grid>
+        </Grid>
+    </Border>
+</Window>

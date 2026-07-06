@@ -1,0 +1,16 @@
+bin/
+obj/
+.vs/
+.idea/
+*.user
+*.suo
+*.pdb
+quickocr.settings.json
+*.log
+
+# Local SDK/runtime folders
+.dotnet/
+work/.dotnet/
+
+# Keep the portable executable, but ignore debug symbols.
+!dist/QuickOcr.exe
