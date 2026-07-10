@@ -1,5 +1,13 @@
 # Quick OCR
 
+## Assets Preview
+
+<p>
+  <img src="src/QuickOcr/Assets/QuickOcr.png" alt="Quick OCR icon" width="96">
+</p>
+
+![Settings background](src/QuickOcr/Assets/SettingsBackground.png)
+
 Quick OCR は、画面上の指定範囲から文字を素早く抽出するための Windows 向け OCR ツールです。
 
 オフライン利用を前提としており、OCR には Windows OCR API を使用しています。日本語、英語、中国語、および URL や課題管理ツールのリンクを含む日本語/英語混在テキストの読み取りを想定しています。

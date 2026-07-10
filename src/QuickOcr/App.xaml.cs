@@ -108,9 +108,10 @@ public partial class App : System.Windows.Application
                 return;
             }
 
+            await Task.Delay(80);
             _mainWindow.ShowLoading();
             using var bitmap = ScreenCapture.Capture(overlay.SelectedBounds);
-            var result = await WindowsOcrService.RecognizeAsync(bitmap, _settings.OcrLanguage);
+            var result = await WindowsOcrService.RecognizeAsync(bitmap, _settings.OcrLanguages);
             _mainWindow.ShowResult(result.Text, result.LanguageTag, result.Elapsed);
         }
         catch (Exception ex)
@@ -149,6 +150,8 @@ public partial class App : System.Windows.Application
 
         _settings.Hotkey = window.Settings.Hotkey;
         _settings.OcrLanguage = window.Settings.OcrLanguage;
+        _settings.OcrLanguages = new List<string>(window.Settings.OcrLanguages);
+        _settings.NormalizeLanguages();
         _settings.Save();
 
         if (HotkeyDefinition.TryParse(_settings.Hotkey, out _hotkey))

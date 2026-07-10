@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
 
 namespace QuickOcr;
 
@@ -68,6 +69,14 @@ public partial class MainWindow : Window
     private void CloseButton_Click(object sender, RoutedEventArgs e)
     {
         Hide();
+    }
+
+    private void RoundedContent_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        RoundedContent.Clip = new RectangleGeometry(
+            new Rect(0, 0, RoundedContent.ActualWidth, RoundedContent.ActualHeight),
+            12,
+            12);
     }
 
     private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)

@@ -198,20 +198,45 @@
                            Text="OCR&#35328;&#35486;"
                            Margin="0,28,0,0"
                            Style="{StaticResource FieldTextStyle}" />
-                <ComboBox x:Name="LanguageComboBox"
-                          Grid.Row="1"
-                          Grid.Column="1"
-                          Margin="0,28,0,0"
-                          SelectedValuePath="Tag"
-                          Style="{StaticResource RoundedComboBoxStyle}">
-                    <ComboBox.Effect>
+                <Border Grid.Row="1"
+                        Grid.Column="1"
+                        Margin="0,28,0,0"
+                        Height="48"
+                        Padding="16,0"
+                        Background="#DFFFFFFF"
+                        BorderBrush="#8EA7C8"
+                        BorderThickness="1"
+                        CornerRadius="9">
+                    <Border.Effect>
                         <StaticResource ResourceKey="ControlShadow" />
-                    </ComboBox.Effect>
-                    <ComboBoxItem Content="&#33258;&#21205;" Tag="Auto" />
-                    <ComboBoxItem Content="&#26085;&#26412;&#35486;" Tag="Japanese" />
-                    <ComboBoxItem Content="&#33521;&#35486;" Tag="English" />
-                    <ComboBoxItem Content="&#20013;&#22269;&#35486;" Tag="Chinese" />
-                </ComboBox>
+                    </Border.Effect>
+                    <StackPanel Orientation="Horizontal"
+                                VerticalAlignment="Center">
+                        <CheckBox x:Name="JapaneseCheckBox"
+                                  Content="&#26085;&#26412;&#35486;"
+                                  Tag="Japanese"
+                                  Margin="0,0,28,0"
+                                  FontSize="17"
+                                  VerticalContentAlignment="Center"
+                                  Checked="LanguageCheckBox_Changed"
+                                  Unchecked="LanguageCheckBox_Changed" />
+                        <CheckBox x:Name="EnglishCheckBox"
+                                  Content="English"
+                                  Tag="English"
+                                  Margin="0,0,28,0"
+                                  FontSize="17"
+                                  VerticalContentAlignment="Center"
+                                  Checked="LanguageCheckBox_Changed"
+                                  Unchecked="LanguageCheckBox_Changed" />
+                        <CheckBox x:Name="ChineseCheckBox"
+                                  Content="&#20013;&#25991;"
+                                  Tag="Chinese"
+                                  FontSize="17"
+                                  VerticalContentAlignment="Center"
+                                  Checked="LanguageCheckBox_Changed"
+                                  Unchecked="LanguageCheckBox_Changed" />
+                    </StackPanel>
+                </Border>
             </Grid>
 
             <TextBlock Grid.Row="2"

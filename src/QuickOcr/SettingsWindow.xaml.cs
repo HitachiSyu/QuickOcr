@@ -7,6 +7,7 @@ namespace QuickOcr;
 public partial class SettingsWindow : Window
 {
     private HotkeyDefinition _hotkey;
+    private bool _updatingLanguages;
 
     public AppSettings Settings { get; }
 
@@ -15,13 +16,15 @@ public partial class SettingsWindow : Window
         Settings = new AppSettings
         {
             Hotkey = settings.Hotkey,
-            OcrLanguage = settings.OcrLanguage
+            OcrLanguage = settings.OcrLanguage,
+            OcrLanguages = new List<string>(settings.OcrLanguages)
         };
+        Settings.NormalizeLanguages();
 
         HotkeyDefinition.TryParse(Settings.Hotkey, out _hotkey);
         InitializeComponent();
         HotkeyTextBox.Text = _hotkey.DisplayText;
-        SelectLanguage(Settings.OcrLanguage);
+        SelectLanguages(Settings.OcrLanguages);
     }
 
     private void HotkeyTextBox_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
@@ -47,7 +50,8 @@ public partial class SettingsWindow : Window
     private void SaveButton_Click(object sender, RoutedEventArgs e)
     {
         Settings.Hotkey = _hotkey.DisplayText;
-        Settings.OcrLanguage = ((ComboBoxItem)LanguageComboBox.SelectedItem).Tag?.ToString() ?? "Auto";
+        Settings.OcrLanguages = GetSelectedLanguages();
+        Settings.NormalizeLanguages();
         DialogResult = true;
         Close();
     }
@@ -58,17 +62,43 @@ public partial class SettingsWindow : Window
         Close();
     }
 
-    private void SelectLanguage(string language)
+    private void SelectLanguages(IReadOnlyCollection<string> languages)
     {
-        foreach (ComboBoxItem item in LanguageComboBox.Items)
+        _updatingLanguages = true;
+        JapaneseCheckBox.IsChecked = languages.Contains("Japanese", StringComparer.OrdinalIgnoreCase);
+        EnglishCheckBox.IsChecked = languages.Contains("English", StringComparer.OrdinalIgnoreCase);
+        ChineseCheckBox.IsChecked = languages.Contains("Chinese", StringComparer.OrdinalIgnoreCase);
+        _updatingLanguages = false;
+
+        EnsureAtLeastOneLanguage();
+    }
+
+    private List<string> GetSelectedLanguages()
+    {
+        var languages = new List<string>();
+        if (JapaneseCheckBox.IsChecked == true) languages.Add("Japanese");
+        if (EnglishCheckBox.IsChecked == true) languages.Add("English");
+        if (ChineseCheckBox.IsChecked == true) languages.Add("Chinese");
+        return languages;
+    }
+
+    private void LanguageCheckBox_Changed(object sender, RoutedEventArgs e)
+    {
+        if (!_updatingLanguages)
         {
-            if (string.Equals(item.Tag?.ToString(), language, StringComparison.OrdinalIgnoreCase))
-            {
-                LanguageComboBox.SelectedItem = item;
-                return;
-            }
+            EnsureAtLeastOneLanguage();
+        }
+    }
+
+    private void EnsureAtLeastOneLanguage()
+    {
+        if (JapaneseCheckBox.IsChecked == true
+            || EnglishCheckBox.IsChecked == true
+            || ChineseCheckBox.IsChecked == true)
+        {
+            return;
         }
 
-        LanguageComboBox.SelectedIndex = 0;
+        JapaneseCheckBox.IsChecked = true;
     }
 }

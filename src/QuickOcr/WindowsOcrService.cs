@@ -14,8 +14,14 @@ public static class WindowsOcrService
 {
     public static async Task<RecognizedText> RecognizeAsync(DrawingBitmap source, string languagePreference)
     {
+        return await RecognizeAsync(source, LegacyLanguageToList(languagePreference));
+    }
+
+    public static async Task<RecognizedText> RecognizeAsync(DrawingBitmap source, IReadOnlyList<string> languagePreferences)
+    {
         using var bitmap = NormalizeImageSize(source);
         var stopwatch = Stopwatch.StartNew();
+        var selectedLanguages = NormalizeLanguagePreferences(languagePreferences);
 
         await using var memory = new MemoryStream();
         bitmap.Save(memory, ImageFormat.Png);
@@ -25,16 +31,16 @@ public static class WindowsOcrService
         var decoder = await BitmapDecoder.CreateAsync(randomAccessStream);
         using var softwareBitmap = await decoder.GetSoftwareBitmapAsync(BitmapPixelFormat.Bgra8, BitmapAlphaMode.Premultiplied);
 
-        var primaryEngine = CreateEngine(languagePreference);
+        var primaryEngine = CreatePrimaryEngine(selectedLanguages);
         var primaryResult = await primaryEngine.RecognizeAsync(softwareBitmap);
         var text = BuildTextWithLineBreaks(primaryResult);
         var languageTag = primaryEngine.RecognizerLanguage.LanguageTag;
 
-        if (ShouldUseEnglishAssist(languagePreference, languageTag))
+        if (ShouldUseEnglishAssist(selectedLanguages, languageTag))
         {
             if (!TryCreateEngine("English", out var englishEngine))
             {
-                throw new InvalidOperationException("\u81ea\u52d5\u30e2\u30fc\u30c9\u3068\u65e5\u672c\u8a9e\u30e2\u30fc\u30c9\u306e\u82f1\u6570\u5b57/URL \u88dc\u6b63\u306b\u306f\u3001\u82f1\u8a9e\u306e Windows OCR \u8a00\u8a9e\u30d1\u30c3\u30af\u304c\u5fc5\u8981\u3067\u3059\u3002Windows \u306e\u8a2d\u5b9a\u304b\u3089\u82f1\u8a9e\u306e OCR \u8a00\u8a9e\u30b5\u30dd\u30fc\u30c8\u3092\u8ffd\u52a0\u3057\u3066\u304f\u3060\u3055\u3044\u3002");
+                throw new InvalidOperationException("\u82f1\u6570\u5b57/URL \u88dc\u6b63\u306b\u306f\u3001\u82f1\u8a9e\u306e Windows OCR \u8a00\u8a9e\u30d1\u30c3\u30af\u304c\u5fc5\u8981\u3067\u3059\u3002Windows \u306e\u8a2d\u5b9a\u304b\u3089\u82f1\u8a9e\u306e OCR \u8a00\u8a9e\u30b5\u30dd\u30fc\u30c8\u3092\u8ffd\u52a0\u3057\u3066\u304f\u3060\u3055\u3044\u3002");
             }
 
             if (string.Equals(englishEngine.RecognizerLanguage.LanguageTag, languageTag, StringComparison.OrdinalIgnoreCase))
@@ -44,17 +50,63 @@ public static class WindowsOcrService
             }
 
             var englishResult = await englishEngine.RecognizeAsync(softwareBitmap);
+            var englishText = BuildTextWithLineBreaks(englishResult);
             text = MergeWithEnglishForAsciiLines(primaryResult, englishResult);
             if (string.IsNullOrWhiteSpace(text))
             {
-                text = BuildTextWithLineBreaks(englishResult);
+                text = englishText;
+            }
+            else if (ShouldPreferWholeEnglishText(text, englishText))
+            {
+                text = englishText;
             }
 
             languageTag = $"{languageTag}+{englishEngine.RecognizerLanguage.LanguageTag}";
         }
 
+        if (await ShouldUseChineseFallbackAsync(selectedLanguages, softwareBitmap, text) is { } chineseFallback)
+        {
+            text = chineseFallback.Text;
+            languageTag = $"{languageTag}+{chineseFallback.LanguageTag}";
+        }
+
         stopwatch.Stop();
         return new RecognizedText(text, languageTag, stopwatch.Elapsed);
+    }
+
+    private static List<string> LegacyLanguageToList(string languagePreference)
+    {
+        return languagePreference switch
+        {
+            "Japanese" => ["Japanese"],
+            "English" => ["English"],
+            "Chinese" => ["Chinese"],
+            _ => ["Japanese", "English", "Chinese"]
+        };
+    }
+
+    private static List<string> NormalizeLanguagePreferences(IReadOnlyList<string> languagePreferences)
+    {
+        var languages = languagePreferences
+            .Select(language => language?.Trim())
+            .Where(language => language is "Japanese" or "English" or "Chinese")
+            .Cast<string>()
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(LanguagePriority)
+            .ToList();
+
+        return languages.Count == 0 ? ["Japanese", "English", "Chinese"] : languages;
+    }
+
+    private static int LanguagePriority(string language)
+    {
+        return language switch
+        {
+            "Japanese" => 0,
+            "English" => 1,
+            "Chinese" => 2,
+            _ => 99
+        };
     }
 
     private static OcrEngine CreateEngine(string languagePreference)
@@ -65,6 +117,19 @@ public static class WindowsOcrService
         }
 
         throw new InvalidOperationException("\u5229\u7528\u53ef\u80fd\u306a Windows OCR \u8a00\u8a9e\u30d1\u30c3\u30af\u304c\u898b\u3064\u304b\u308a\u307e\u305b\u3093\u3002Windows \u306e\u8a2d\u5b9a\u304b\u3089\u65e5\u672c\u8a9e\u3001\u82f1\u8a9e\u3001\u307e\u305f\u306f\u4e2d\u56fd\u8a9e\u306e OCR \u8a00\u8a9e\u30b5\u30dd\u30fc\u30c8\u3092\u8ffd\u52a0\u3057\u3066\u304f\u3060\u3055\u3044\u3002");
+    }
+
+    private static OcrEngine CreatePrimaryEngine(IReadOnlyList<string> languagePreferences)
+    {
+        foreach (var language in languagePreferences)
+        {
+            if (TryCreateEngine(language, out var engine))
+            {
+                return engine;
+            }
+        }
+
+        throw new InvalidOperationException("\u9078\u629e\u3055\u308c\u305f Windows OCR \u8a00\u8a9e\u30d1\u30c3\u30af\u304c\u898b\u3064\u304b\u308a\u307e\u305b\u3093\u3002Windows \u306e\u8a2d\u5b9a\u304b\u3089 OCR \u8a00\u8a9e\u30b5\u30dd\u30fc\u30c8\u3092\u8ffd\u52a0\u3057\u3066\u304f\u3060\u3055\u3044\u3002");
     }
 
     private static bool TryCreateEngine(string languagePreference, out OcrEngine engine)
@@ -115,15 +180,46 @@ public static class WindowsOcrService
         return languagePreference == "Auto" ? available[0] : null;
     }
 
-    private static bool ShouldUseEnglishAssist(string languagePreference, string primaryLanguageTag)
+    private static bool ShouldUseEnglishAssist(IReadOnlyCollection<string> languagePreferences, string primaryLanguageTag)
     {
-        if (languagePreference is "English" or "Chinese")
+        if (!languagePreferences.Contains("English", StringComparer.OrdinalIgnoreCase)
+            || primaryLanguageTag.StartsWith("en", StringComparison.OrdinalIgnoreCase))
         {
             return false;
         }
 
-        return primaryLanguageTag.StartsWith("ja", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(languagePreference, "Auto", StringComparison.OrdinalIgnoreCase);
+        return primaryLanguageTag.StartsWith("ja", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static async Task<RecognizedText?> ShouldUseChineseFallbackAsync(
+        IReadOnlyCollection<string> languagePreferences,
+        SoftwareBitmap softwareBitmap,
+        string currentText)
+    {
+        if (!languagePreferences.Contains("Chinese", StringComparer.OrdinalIgnoreCase)
+            || languagePreferences.Count <= 1
+            || HasUsableText(currentText)
+            || !TryCreateEngine("Chinese", out var chineseEngine))
+        {
+            return null;
+        }
+
+        var chineseResult = await chineseEngine.RecognizeAsync(softwareBitmap);
+        var chineseText = BuildTextWithLineBreaks(chineseResult);
+        return HasUsableText(chineseText)
+            ? new RecognizedText(chineseText, chineseEngine.RecognizerLanguage.LanguageTag, TimeSpan.Zero)
+            : null;
+    }
+
+    private static bool HasUsableText(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return false;
+        }
+
+        var meaningful = text.Count(ch => char.IsLetterOrDigit(ch) || IsCjkUnifiedIdeograph(ch) || IsJapaneseKana(ch));
+        return meaningful >= 3;
     }
 
     private static string MergeWithEnglishForAsciiLines(Windows.Media.Ocr.OcrResult primary, Windows.Media.Ocr.OcrResult english)
@@ -176,6 +272,37 @@ public static class WindowsOcrService
         return ScoreAsciiLine(cleanedEnglish) >= ScoreAsciiLine(primaryLine);
     }
 
+    private static bool ShouldPreferWholeEnglishText(string currentText, string englishText)
+    {
+        if (string.IsNullOrWhiteSpace(englishText)
+            || HasJapaneseText(currentText))
+        {
+            return false;
+        }
+
+        var compactEnglish = englishText.ReplaceLineEndings(" ");
+        var nonWhiteEnglish = compactEnglish.Count(ch => !char.IsWhiteSpace(ch));
+        if (nonWhiteEnglish == 0)
+        {
+            return false;
+        }
+
+        var asciiEnglish = compactEnglish.Count(ch => ch <= 0x7f && !char.IsWhiteSpace(ch));
+        if (asciiEnglish < nonWhiteEnglish * 0.9 || !LooksLikeUrlOrTechnicalText(compactEnglish))
+        {
+            return false;
+        }
+
+        var englishAsciiLetters = compactEnglish.Count(IsAsciiLetter);
+        var currentAsciiLetters = currentText.Count(IsAsciiLetter);
+        if (englishAsciiLetters >= currentAsciiLetters + 4)
+        {
+            return true;
+        }
+
+        return ScoreAsciiLine(compactEnglish) >= ScoreAsciiLine(currentText.ReplaceLineEndings(" "));
+    }
+
     private static bool LooksLikeUrlOrTechnicalText(string line)
     {
         if (string.IsNullOrWhiteSpace(line))
@@ -223,9 +350,34 @@ public static class WindowsOcrService
     private static List<string> BuildLines(Windows.Media.Ocr.OcrResult result)
     {
         return result.Lines
-            .Select(line => BuildLineText(line.Words.Select(word => word.Text)))
-            .Where(line => !string.IsNullOrWhiteSpace(line))
+            .Select(line =>
+            {
+                var position = GetLinePosition(line);
+                return new
+                {
+                    position.Top,
+                    position.Left,
+                    Text = BuildLineText(line.Words.Select(word => word.Text))
+                };
+            })
+            .Where(line => !string.IsNullOrWhiteSpace(line.Text))
+            .OrderBy(line => line.Top)
+            .ThenBy(line => line.Left)
+            .Select(line => line.Text)
             .ToList();
+    }
+
+    private static (double Top, double Left) GetLinePosition(Windows.Media.Ocr.OcrLine line)
+    {
+        var words = line.Words.ToList();
+        if (words.Count == 0)
+        {
+            return (double.MaxValue, double.MaxValue);
+        }
+
+        return (
+            words.Min(word => word.BoundingRect.Top),
+            words.Min(word => word.BoundingRect.Left));
     }
 
     private static string BuildLineText(IEnumerable<string> words)
@@ -272,9 +424,29 @@ public static class WindowsOcrService
         return value is >= 'A' and <= 'Z' or >= 'a' and <= 'z' or >= '0' and <= '9';
     }
 
+    private static bool IsAsciiLetter(char value)
+    {
+        return value is >= 'A' and <= 'Z' or >= 'a' and <= 'z';
+    }
+
     private static bool IsAsciiUrlNeighbor(char value)
     {
         return value <= 0x7f && (char.IsLetterOrDigit(value) || value is '/' or '\\' or '.' or '_' or '-' or ':' or '@');
+    }
+
+    private static bool IsCjkUnifiedIdeograph(char value)
+    {
+        return value is >= '\u4e00' and <= '\u9fff';
+    }
+
+    private static bool IsJapaneseKana(char value)
+    {
+        return value is >= '\u3040' and <= '\u30ff';
+    }
+
+    private static bool HasJapaneseText(string text)
+    {
+        return text.Count(IsJapaneseKana) >= 3;
     }
 
     private static DrawingBitmap NormalizeImageSize(DrawingBitmap source)
@@ -290,6 +462,11 @@ public static class WindowsOcrService
         if (source.Width < 480)
         {
             scale = Math.Max(scale, 480.0 / source.Width);
+        }
+
+        if (Math.Abs(scale - 1.0) < 0.01 && source.Width < 1600 && source.Height < 1200)
+        {
+            scale = 2.0;
         }
 
         if (source.Width * scale > maxDimension || source.Height * scale > maxDimension)

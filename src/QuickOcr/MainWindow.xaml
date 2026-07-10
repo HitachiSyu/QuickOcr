@@ -11,6 +11,8 @@
         AllowsTransparency="True"
         WindowStyle="None"
         ResizeMode="CanResizeWithGrip"
+        SnapsToDevicePixels="True"
+        UseLayoutRounding="True"
         Icon="Assets/QuickOcr.ico">
     <Window.Resources>
         <Style x:Key="BaseButtonStyle" TargetType="Button">
@@ -71,89 +73,98 @@
         </Style>
     </Window.Resources>
 
-    <Border BorderBrush="#C7D0DD"
-            BorderThickness="1"
-            CornerRadius="12"
-            ClipToBounds="True">
-        <Border.Effect>
-            <DropShadowEffect BlurRadius="24"
-                              ShadowDepth="8"
-                              Opacity="0.22" />
-        </Border.Effect>
+    <Grid Margin="10"
+          SnapsToDevicePixels="True">
+        <Border CornerRadius="12"
+                Background="#01FFFFFF">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="24"
+                                  ShadowDepth="8"
+                                  Opacity="0.22" />
+            </Border.Effect>
+        </Border>
 
-        <Grid>
-            <Image Source="Assets/SettingsBackground.png"
-                   Stretch="UniformToFill"
-                   Opacity="1" />
-            <Rectangle Fill="#58FFFFFF" />
-            <Rectangle>
-                <Rectangle.Fill>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                        <GradientStop Color="#30FFFFFF" Offset="0" />
-                        <GradientStop Color="#10FFFFFF" Offset="0.55" />
-                        <GradientStop Color="#24FFFFFF" Offset="1" />
-                    </LinearGradientBrush>
-                </Rectangle.Fill>
-            </Rectangle>
+        <Border BorderBrush="#C7D0DD"
+                BorderThickness="1"
+                CornerRadius="12"
+                ClipToBounds="True"
+                SnapsToDevicePixels="True">
+            <Grid x:Name="RoundedContent"
+                  SizeChanged="RoundedContent_SizeChanged">
+                <Image Source="Assets/SettingsBackground.png"
+                       Stretch="UniformToFill"
+                       Opacity="1" />
+                <Rectangle Fill="#58FFFFFF" />
+                <Rectangle>
+                    <Rectangle.Fill>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#30FFFFFF" Offset="0" />
+                            <GradientStop Color="#10FFFFFF" Offset="0.55" />
+                            <GradientStop Color="#24FFFFFF" Offset="1" />
+                        </LinearGradientBrush>
+                    </Rectangle.Fill>
+                </Rectangle>
 
-            <Grid Margin="18">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
+                <Grid Margin="18">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
 
-                <DockPanel MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
-                    <TextBlock Text="OCR&#32080;&#26524;"
-                               FontSize="17"
-                               FontWeight="SemiBold"
-                               Foreground="#151515"
-                               VerticalAlignment="Center" />
-                    <StackPanel DockPanel.Dock="Right"
-                                Orientation="Horizontal"
-                                HorizontalAlignment="Right">
-                        <Button x:Name="CopyButton"
-                                Content="&#12467;&#12500;&#12540;"
-                                Click="CopyButton_Click"
-                                Style="{StaticResource ActionButtonStyle}" />
-                        <Button Content="&#35373;&#23450;"
-                                Click="SettingsButton_Click"
-                                Style="{StaticResource SecondaryButtonStyle}" />
-                        <Button Content="&#20877;&#21462;&#24471;"
-                                Click="RetakeButton_Click"
-                                Style="{StaticResource SecondaryButtonStyle}" />
-                        <Button Content="&#38281;&#12376;&#12427;"
-                                Click="CloseButton_Click"
-                                Style="{StaticResource SecondaryButtonStyle}" />
-                    </StackPanel>
-                </DockPanel>
+                    <DockPanel Background="Transparent"
+                               MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                        <TextBlock Text="OCR&#32080;&#26524;"
+                                   FontSize="17"
+                                   FontWeight="SemiBold"
+                                   Foreground="#151515"
+                                   VerticalAlignment="Center" />
+                        <StackPanel DockPanel.Dock="Right"
+                                    Orientation="Horizontal"
+                                    HorizontalAlignment="Right">
+                            <Button x:Name="CopyButton"
+                                    Content="&#12467;&#12500;&#12540;"
+                                    Click="CopyButton_Click"
+                                    Style="{StaticResource ActionButtonStyle}" />
+                            <Button Content="&#35373;&#23450;"
+                                    Click="SettingsButton_Click"
+                                    Style="{StaticResource SecondaryButtonStyle}" />
+                            <Button Content="&#20877;&#21462;&#24471;"
+                                    Click="RetakeButton_Click"
+                                    Style="{StaticResource SecondaryButtonStyle}" />
+                            <Button Content="&#38281;&#12376;&#12427;"
+                                    Click="CloseButton_Click"
+                                    Style="{StaticResource SecondaryButtonStyle}" />
+                        </StackPanel>
+                    </DockPanel>
 
-                <TextBox x:Name="ResultTextBox"
-                         Grid.Row="1"
-                         Margin="0,16,0,12"
-                         Padding="15"
-                         AcceptsReturn="True"
-                         AcceptsTab="True"
-                         VerticalScrollBarVisibility="Auto"
-                         HorizontalScrollBarVisibility="Auto"
-                         TextWrapping="Wrap"
-                         FontSize="15"
-                         FontFamily="Yu Gothic UI, Segoe UI"
-                         Style="{StaticResource RoundedResultTextBoxStyle}" />
+                    <TextBox x:Name="ResultTextBox"
+                             Grid.Row="1"
+                             Margin="0,16,0,12"
+                             Padding="15"
+                             AcceptsReturn="True"
+                             AcceptsTab="True"
+                             VerticalScrollBarVisibility="Auto"
+                             HorizontalScrollBarVisibility="Auto"
+                             TextWrapping="Wrap"
+                             FontSize="15"
+                             FontFamily="Yu Gothic UI, Segoe UI"
+                             Style="{StaticResource RoundedResultTextBoxStyle}" />
 
-                <DockPanel Grid.Row="2">
-                    <TextBlock x:Name="StatusTextBlock"
-                               Foreground="#4C4C4C"
-                               FontSize="12"
-                               VerticalAlignment="Center" />
-                    <TextBlock x:Name="HotkeyTextBlock"
-                               DockPanel.Dock="Right"
-                               Text="Ctrl+Shift+O"
-                               Foreground="#4C4C4C"
-                               FontSize="12"
-                               VerticalAlignment="Center" />
-                </DockPanel>
+                    <DockPanel Grid.Row="2">
+                        <TextBlock x:Name="StatusTextBlock"
+                                   Foreground="#4C4C4C"
+                                   FontSize="12"
+                                   VerticalAlignment="Center" />
+                        <TextBlock x:Name="HotkeyTextBlock"
+                                   DockPanel.Dock="Right"
+                                   Text="Ctrl+Shift+O"
+                                   Foreground="#4C4C4C"
+                                   FontSize="12"
+                                   VerticalAlignment="Center" />
+                    </DockPanel>
+                </Grid>
             </Grid>
-        </Grid>
-    </Border>
+        </Border>
+    </Grid>
 </Window>

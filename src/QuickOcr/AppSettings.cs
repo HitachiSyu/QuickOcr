@@ -7,9 +7,11 @@ namespace QuickOcr;
 public sealed class AppSettings
 {
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
+    private static readonly string[] DefaultLanguages = ["Japanese", "English", "Chinese"];
 
     public string Hotkey { get; set; } = "Ctrl+Shift+O";
     public string OcrLanguage { get; set; } = "Auto";
+    public List<string> OcrLanguages { get; set; } = [];
 
     public static string SettingsPath => Path.Combine(AppContext.BaseDirectory, "quickocr.settings.json");
 
@@ -23,17 +25,70 @@ public sealed class AppSettings
             }
 
             var settings = JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(SettingsPath), JsonOptions);
-            return settings ?? new AppSettings();
+            settings ??= new AppSettings();
+            settings.NormalizeLanguages();
+            return settings;
         }
         catch
         {
-            return new AppSettings();
+            var settings = new AppSettings();
+            settings.NormalizeLanguages();
+            return settings;
         }
     }
 
     public void Save()
     {
+        NormalizeLanguages();
         File.WriteAllText(SettingsPath, JsonSerializer.Serialize(this, JsonOptions));
+    }
+
+    public void NormalizeLanguages()
+    {
+        var normalized = (OcrLanguages ?? [])
+            .Select(NormalizeLanguage)
+            .Where(language => language is not null)
+            .Cast<string>()
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (normalized.Count == 0)
+        {
+            normalized = LegacyLanguageToList(OcrLanguage);
+        }
+
+        if (normalized.Count == 0)
+        {
+            normalized = new List<string>(DefaultLanguages);
+        }
+
+        OcrLanguages = normalized
+            .OrderBy(language => Array.IndexOf(DefaultLanguages, language))
+            .ToList();
+        OcrLanguage = OcrLanguages.Count == DefaultLanguages.Length ? "Auto" : OcrLanguages[0];
+    }
+
+    private static List<string> LegacyLanguageToList(string language)
+    {
+        return NormalizeLanguage(language) switch
+        {
+            "Japanese" => ["Japanese"],
+            "English" => ["English"],
+            "Chinese" => ["Chinese"],
+            _ => new List<string>(DefaultLanguages)
+        };
+    }
+
+    private static string? NormalizeLanguage(string? language)
+    {
+        return language?.Trim() switch
+        {
+            "Auto" => null,
+            "Japanese" => "Japanese",
+            "English" => "English",
+            "Chinese" => "Chinese",
+            _ => null
+        };
     }
 }
 
